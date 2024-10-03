@@ -1,0 +1,81 @@
+/*
+Copyright Production 3000
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+
+const char* altHtml = R"===(
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <title>CO2-Ampel - MVP3000 Use Case</title>
+    <script>
+var websocket;
+
+window.addEventListener('load', () => {
+    document.getElementById('calibrate').addEventListener('click', () => { websocket.send('CALIBRATE'); } );
+    connect();
+});
+
+function connect() {
+    document.getElementById('coninfo').innerHTML = 'Connecting ...';
+    document.getElementById('data').innerHTML = 'no data';
+
+    websocket = new WebSocket('ws://%2%/wssensor');
+
+    websocket.onopen = function() {
+        document.getElementById('coninfo').innerHTML = 'Connected';
+    }
+    websocket.onclose = function() {
+        document.getElementById('coninfo').innerHTML = 'Not connected';
+        connect();
+    }
+    websocket.onmessage = function(e) {
+        thestrings = e.data.split(/[;,]+/)
+        document.getElementById('data').innerHTML = thestrings[1] + ' ppm, ' + thestrings[2]/10 + ' &deg;C, ' + thestrings[3]/10 + ' %';
+
+    }
+    websocket.onerror = function() {
+        document.getElementById('coninfo').innerHTML = 'Error';
+    };
+}
+    </script>
+</head>
+<body>
+    <h2>CO2-Ampel - MVP3000 Use Case</h2>
+    <p><span id='coninfo'>Not connected</span></p>
+    <p><span id='data'>No data</span></p>
+    <p><button id='calibrate'>Calibrate</button></p>
+    <img src='data:image/png;base64,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' >
+</body></html>
+)===";
+
+
+/* 
+
+CO2-Ampel
+https://www.bastelgarage.ch/bauteile/sensoren/co2-gas-luftqualitat/co2-ampel-mit-smileys-und-balkenanzeige
+https://www.co2ampel.ch 
+https://github.com/bastelgarage/co2ampel
+
+Based on the MVP3000 framework
+https://co2ampel.production3000.com/
+https://github.com/Production3000/mvp3000esp
+https://www.production3000.com/mvp3000/
+
+Base62 encoded images
+https://base64.guru/converter/encode/image/png
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mP4z8AAAAMBAQD3A0FDAAAAAElFTkSuQmCC">
+
+ */
