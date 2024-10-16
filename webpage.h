@@ -15,129 +15,176 @@ limitations under the License.
 */
 
 
-const char* altHtml = R"===(
+const char altHtml[] PROGMEM = R"===(
 <!DOCTYPE html>
 <html lang='de'>
 <head>
-<meta charset='UTF-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-<title>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</title>
-<script>
-var websocket;var $=function(id){return document.getElementById(id);};window.addEventListener('load',()=>{$('calibrate').addEventListener('click',()=>{websocket.send('CALIBRATE');});connect();});function connect(){$('d1').innerHTML='-';$('d1').style.color='grey';$('ds').innerHTML='&#129488;';$('d2').innerHTML='-';$('d3').innerHTML='-';websocket=new WebSocket('ws://'+location.host+'/wssensor');websocket.onclose=function(){connect();};websocket.onmessage=function(e){s=e.data.split(/[;,]+/);$('d1').innerHTML=s[1];if(s[1]>1000){$('d1').style.color='red';$('ds').innerHTML='&#128577;';}else if(s[1]>700){$('d1').style.color='orange';$('ds').innerHTML='&#128528;';}else{$('d1').style.color='green';$('ds').innerHTML='&#128578;';};$('d2').innerHTML=(s[2]/10).toFixed(1);$('d3').innerHTML=(s[3]/10).toFixed(1);}}
-</script>
-<style>
-body {
-font-family: Arial, sans-serif;
-background-color: rgb(242, 252, 248);
-color: rgb(53, 53, 53);
-margin: 0;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</title>
+    <script>
+var websocket;
+var $ = function(id) { return document.getElementById(id); };
+
+window.addEventListener('load', () => {
+    $('calibrate').addEventListener('click', () => { websocket.send('CALIBRATE'); } );
+    connect();
+});
+
+function connect() {
+    // $('coninfo').innerHTML = 'Connecting ...';
+    $('d1').innerHTML = '-';
+    $('d1').style.color = 'grey';
+    $('ds').innerHTML = '&#129488;';
+    $('d2').innerHTML = '-';
+    $('d3').innerHTML = '-';
+
+    websocket = new WebSocket('ws://' + location.host + '/wssensor');
+
+    websocket.onopen = function() {
+        // $('coninfo').innerHTML = 'Connected';
+    }
+    websocket.onclose = function() {
+        // $('coninfo').innerHTML = 'Not connected';
+        connect();
+    }
+    websocket.onmessage = function(e) {
+        s = e.data.split(/[;,]+/)
+        $('d1').innerHTML = s[1];
+        if (s[1] > 1000) {
+            $('d1').style.color = 'red';
+            $('ds').innerHTML = '&#128577;';
+        } else if (s[1] > 700) {
+            $('d1').style.color = 'orange';
+            $('ds').innerHTML = '&#128528;';
+        } else {
+            $('d1').style.color = 'green';
+            $('ds').innerHTML = '&#128578;';
+        }
+        $('d2').innerHTML = (s[2] / 10).toFixed(1);
+        $('d3').innerHTML = (s[3] / 10).toFixed(1);
+    }
+    websocket.onerror = function() {
+        // $('coninfo').innerHTML = 'Error';
+    };
 }
-a {
-text-decoration: none;
-font-weight: bold;
-color: #228976;
-}
-.container {
-display: grid;
-grid-template-areas:
-'head head head'
-'data data bastel'
-'data data bastel'
-'data data mvp'
-'cali cali mvp';
-gap: 20px;
-max-width: 1200px;
-padding: 20px;
-box-sizing: border-box;
-}
-.section {
-background-color: rgb(239, 239, 239);
-padding: 20px;
-border-radius: 10px;
-border: 1px solid #228976;
-}
-.section h2 {
-margin-top: 0;
-}
-.head-display {
-grid-area: head;
-}
-.head-display h2 {
-margin-top: 0;
-margin-bottom: 0;
-}
-.data-display {
-grid-area: data;
-}
-.bastel-display {
-grid-area: bastel;
-}
-.mvp-display {
-grid-area: mvp;
-}
-.cali-display {
-grid-area: cali;
-}
-.co2 {
-font-size: 3em;
-font-weight: bold;
-text-align: center;
-padding-bottom: 50px;
-padding-top: 30px;
-}
-.smiley {
-font-size: 3em;
-}
-.footer {
-font-size: 0.8em;
-margin-top: 20px;
-}
-@media (max-width: 768px) {
-.container {
-grid-template-areas:
-    'head'
-    'data'
-    'cali'
-    'mvp'
-    'bastel';
-}
-}
-</style>
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: rgb(242, 252, 248);
+            color: rgb(53, 53, 53);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #228976;
+        }
+        .container {
+            display: grid;
+            grid-template-areas:
+                'head head head'
+                'data data bastel'
+                'data data bastel'
+                'data data mvp'
+                'cali cali mvp';
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .section {
+            background-color: rgb(239, 239, 239);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #228976;
+        }
+        .section h2 {
+            margin-top: 0;
+        }
+        .head-display {
+            grid-area: head;
+        }
+        .head-display h2 {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        .data-display {
+            grid-area: data;
+        }
+        .bastel-display {
+            grid-area: bastel;
+        }
+        .mvp-display {
+            grid-area: mvp;
+        }
+        .cali-display {
+            grid-area: cali;
+        }
+        .co2 {
+            width: 100%;
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            padding-bottom: 50px;
+            padding-top: 30px;
+        }
+        .smiley {
+            font-size: 3em;
+        }
+        .footer {
+            font-size: 0.8em;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-areas:
+                    'head'
+                    'data'
+                    'cali'
+                    'mvp'
+                    'bastel';
+            }
+        }
+    </style>
 </head>
 <body>
-<div class='container'>
-<div class='section head-display'>
-<h2>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</h2>
-</div>
-<div class='section data-display'>
-<div class='co2'><span class='smiley' id='ds'>&#129488;</span> <br> <br> <span id='d1'>-</span> ppm</div>
-<div>Temperatur im Gehäuse: <span id='d2'>-</span> &deg;C</div>
-<div>Relative Luftfeuchtigkeit: <span id='d3'>-</span>&percnt;</div>
-</div>
-<div class='section bastel-display'>
-<img src="data:image/png;base64,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" />
-<p>Die CO2-Ampel wird hergestellt und vertrieben von der Bastelgarage (purecrea GmbH).</p>
-<p>Weitere Informationen sind auf <a href='https://www.co2ampel.ch' target='_blank'>co2ampel.ch</a> und <a href='https://www.bastelgarage.ch/bauteile/sensoren/co2-gas-luftqualitat/co2-ampel-mit-dss-und-balkenanzeige' target='_blank'>bastelgarage.ch</a> zu finden.</p>
-<p>Die <a href='https://github.com/bastelgarage/co2ampel' target='_blank'>offizielle Firmware</a> ist Open Source und auf GitHub verfügbar.</p>
-</div>
-<div class='section cali-display'>
-<h2>Kalibrierung</h2>
-<p>Vor der Kalibrierung muss die CO2-Ampel mindestens 5 Minuten im Freien oder direkt am offenen Fenster betrieben werden. Erst danach kann die Kalibrierung zuverlässig durchgeführt werden!</p>
-<button id='calibrate'>Kalibrierung starten</button>
-</div>
-<div class='section mvp-display'>
-<img src="data:image/png;base64,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" />
-<p>Das <a href='https://www.production3000.com/mvp3000/' target='_blank'>MVP3000 Framework</a> ermöglicht die schnelle Entwicklung eines MVP (minimum viable products) zu Demonstrationszwecken: Daten aufzeichnen, verarbeiten und visualisieren.</p>
-<p>Mehr Informationen zu diesem Anwendungsbeispiel ist auf <a href='https://co2ampel.production3000.com/' target='_blank'>co2ampel.production3000.com</a> zu finden.</p>
-<p>Der <a href='https://github.com/Production3000/co2ampel' target='_blank'>Quellcode</a> ist ist Open Source und auf GitHub verfügbar.</p>
-</div>
-</div>
-<div class='footer'>
-Copyright Production 3000
-</div>
-</div>
-</body></html>)===";
+    <div class='container'>
+        <div class='section head-display'>
+            <h2>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</h2>
+        </div>
+        <div class='section data-display'>
+            <div class='co2'><span class='smiley' id='ds'>&#129488;</span> <br> <br> <span id='d1'>-</span> ppm</div>
+            <div>Temperatur im Gehäuse: <span id='d2'>-</span> &deg;C</div>
+            <div>Relative Luftfeuchtigkeit: <span id='d3'>-</span>&percnt;</div>
+        </div>
+        <div class='section bastel-display'>
+            <img src='data:image/png;base64,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' />
+            <p>Die CO2-Ampel wird hergestellt und vertrieben von der Bastelgarage (purecrea GmbH).</p>
+            <p>Weitere Informationen sind auf <a href='https://www.co2ampel.ch' target='_blank'>co2ampel.ch</a> und <a href='https://www.bastelgarage.ch/bauteile/sensoren/co2-gas-luftqualitat/co2-ampel-mit-dss-und-balkenanzeige' target='_blank'>bastelgarage.ch</a> zu finden.</p>
+            <p>Die <a href='https://github.com/bastelgarage/co2ampel' target='_blank'>offizielle Firmware</a> ist Open Source und auf GitHub verfügbar.</p>
+        </div>
+        <div class='section cali-display'>
+            <h2>Kalibrierung</h2>
+            <p>Vor der Kalibrierung muss die CO2-Ampel mindestens 5 Minuten im Freien oder direkt am offenen Fenster betrieben werden. Erst danach kann die Kalibrierung zuverlässig durchgeführt werden!</p>
+            <button id='calibrate'>Kalibrierung starten</button>
+        </div>
+        <div class='section mvp-display'>
+            <img src='data:image/png;base64,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dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgIHhtbG5zOkdJTVA9Imh0dHA6Ly93d3cuZ2ltcC5vcmcveG1wLyIKICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIgogICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICB4bXBNTTpEb2N1bWVudElEPSJnaW1wOmRvY2lkOmdpbXA6NGI5OGQxOTYtNWU2NC00OTEwLWIxMWQtNWQ1ZmYxOTI5NDZhIgogICB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOmIzOThlM2YxLWJhOWItNDJjZi05YTNiLWNlMTc0Y2FjOWNjOSIKICAgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjU4ZGRmNjI4LTQ2Y2UtNDAyNi05MWVjLTY4NGM3NmFlMDEzYSIKICAgZGM6Rm9ybWF0PSJpbWFnZS9wbmciCiAgIEdJTVA6QVBJPSIyLjAiCiAgIEdJTVA6UGxhdGZvcm09IkxpbnV4IgogICBHSU1QOlRpbWVTdGFtcD0iMTcyOTA4NTYzNDYyODEyMiIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjMwIgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE3ZTA4MDczLWFjOTQtNGM0ZS1iYTdmLTVjYTRiZmUxMTM1NSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTZUMTU6MzM6NTQrMDI6MDAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+8necDwAAAA9QTFRFAAAAI4l3WJWWcq6gpczGFAeV9wAAAAF0Uk5TAEDm2GYAAAABYktHRACIBR1IAAAACXBIWXMAABcSAAAXEgFnn9JSAAAAB3RJTUUH6AoQDSE2Z5dvWAAABmNJREFUaN7tmmmCoyoQgDFwAFEPoN3vABBzAJ3k/md6UZaqYhPNLH+aHzNdisUnFLVgGKtqTyn7BzvdKh8rdpOu9QuVB+jTmCud6cF48Ih9yndtYdy9PZDWvbX7hd52W+3VBQ1mVOhNKzzWU0CvwA/kgDj0eRQA/WNSlQBv/vICgH0K0MwZkkejQYTMCPA9dg6QY0V5wEi7Wa4k4P4KMppCHfLw8JkkoK4DjLQ3oDYCbCmg6SVkyEwAhwwgl1WAsfbGowDg4/XSbjAjP4M3GtyIixt7dq+eAVyd0Qr9Bvye323faNsfIwA6ixNeewOsHtBPtR1qsRDK3eg912j/2BT8mvy7xoAAL/QI23WEXeUZYFlacBkR4I0C7jf9SKM3lwEBGqV9EpCDs2BCAaCigIL6lB4AxxBQBIBkJOQAMKCf9hiw8VegJQBvsfYG9gMBZBnABraziAA53vsEUGNHmgdE2jkF7GsAR6t1QO5YYUCG9z4BnFBEqQN0I2+XBqOuCOi0aTSSjgB1DhA58RLgirTbRxygCgB5AIh3Uh6w+RAw1D5awHVftpKbWR3EhLRadbWAyzEg2utuNndAvt9Gjvo5SfQIjjz6EqA4AagSgGJ//CDUfbPrM3gGcEwAbkO1MSDND9lfAkzN4PZvf5RuKfZ3bDA5g9sYdQmrvg5YuYsd4IQBtw6KAqKUf/7SZJO0jCz3H/KDE3Izu+bWA74zoMeL+nMfquojyRKGukrAIRFJ9v96GkloN+e3o1i8RLFY2bePAIfLsdimn1MB0K8Rhw5xNtPg5Mynt2N9NoO0B4DO9rKAznwFWJNGWiFf78lWWnGW5miWcj6oonxwgGo0C9hgv0NzXo61Q/Uw4AEFcqXrmAUE7QJn1APKrHOAfvJXW/8KTVb963tGlVVj762kZDSvcZcFQK99ctob/K4FQGqEsp8h2PCoEnOdzAEEPo2Y7+DpUoBEe8fCpSsBeh+qg2hNARU4MdwndQKQAsQPmic94HoA2KTK4OhkYaDHNyjC8TpAnjpZGOBOHpBTc0LTxRPnN4lDJ10FGGn3gOIAEBISoeni8dQJmLvY+RRBTMFbpAE94YNRQFtab5U+BgR5+0vhgyo3tJj39qLZiuEZgnM/HPGeoJAM+yRHedz34iFbqb1ey2Ef8XrFj73qtL/YT/tpP+2n/ePWxDUEDrNDfAk7by2j1uMvDNcbQ5Ezg65ldJTmeTqWBRzgEw0uHIUm4pqRugUdj9oh+hLgkvk8xaLcCoV+HeFt7ReR71EVDtKKAEV83sjwdxxy6Rbmfk16baI1J9OtUlKUZSKrygRbXjJBlQXsIhPs6Stv4mvBnx2SEioJMyu8xocEOjThKQZsI+yezZNZWNdB77NCJBFKYFVFE1SfmyB6ZjVWbavDCaTBW/zNSVdMkIcmyBMcC/3KRe7Yqn4l/+m0BGY/FkywL5vgmpwnngFUbupsOWAlu1INurdJMCYruOn2tAkO6a1tlJn1c+bG/edFkODenzLBNomN5gwghAdzoE7aXsIPMRR+MtCdN8E0toRlVHaG7Vml9Um9lby3gZMldd0E016Q56PrGkCE0gi40wUTXCsyhaIJ2tNE/921iFuVKdDZnQITFGmKtBfsHv5IwANqQDK4Dr7zM5j1gkxGmUJUtvO0m067QH8OQAGXpOSX+JQJ8g9McIEVQIBrDLj6+TzIFH6zCaZmcKkAPMgFx7QX7IpecE0BzvO8+A/jGcApAZj3glNkgqLSBKe8GzRfkE4sscgGYlHygsVkVZSqjKa0iyeySWSFCQ6nTbCQKfhkIQ3YEzfjAPVHyeoJE5Qo+i6FSBI66nymEOeCkQmKM8mqTwHKoS4A5B8lq6dN0AJCxoKRWivBPZOsqgtesJisNhWAIpkB0uRrT7fWj5JVWVMvJWyQZtQDSVhdMmsz6qmYCx6U7OdNEFJ+DRUK1E6NTRKcQyrVS6wUiNuwhq9KVs3tGyFD1VIf106lTOFWctNL1gS7zKlRO0v046L32gpUjCi7tRma5F06LNnHsgnqehNstzTh2/8Mdfvxg54ZbNinTEnbEF11IK41wSmTShM7oX5hSUlbCDkwwe5Kyc5kCdC91H9EGog+kAoHlxfrJZkNxCqYdIU/s5m7MpKu1kvsSr0kv+4zXv1pJs/fNb55vxtXo393yT6WveDZ9j9Zvv7SIeMp1wAAAABJRU5ErkJggg==' />
+            <p>Das <a href='https://www.production3000.com/mvp3000/' target='_blank'>MVP3000 Framework</a> ermöglicht die schnelle Entwicklung eines MVP (minimum viable products) zu Demonstrationszwecken: Daten aufzeichnen, verarbeiten und visualisieren.</p>
+            <p>Mehr Informationen zu diesem Anwendungsbeispiel ist auf <a href='https://co2ampel.production3000.com/' target='_blank'>co2ampel.production3000.com</a> zu finden.</p>
+            <p>Der <a href='https://github.com/Production3000/co2ampel' target='_blank'>Quellcode</a> ist ist Open Source und auf GitHub verfügbar.</p>
+        </div>
+    </div>
+    <div class='footer'>
+        Copyright Production 3000
+    </div>
+</body>
+</html>
+)===";

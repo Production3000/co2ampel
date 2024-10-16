@@ -164,9 +164,9 @@ void loop() {
                 // The first CO2 measurement is always 0, probably some running median thing
                 if (data[0] > atmosphericCO2 - 100) { 
                     xmoduleSensor.addSample(data);
-                    // uint8_t brightness[NUMPIXELS] = {0};
-                    // onDemandSetter(brightness);
-                    // xmoduleLED.setFixedBrightnessIndividual(brightness);
+                    uint8_t brightness[NUMPIXELS] = {0};
+                    onDemandSetter(brightness);
+                    xmoduleLED.setFixedBrightnessIndividual(brightness);
 
                     // Blink faster if CO2 is high
                     // uint16_t interval = constrain(2300 - (uint16_t)data[0], 100, 2300);
@@ -195,12 +195,11 @@ void loop() {
 #include "webpage.h"
 size_t altResponseFiller(uint8_t *buffer, size_t maxLen, size_t index) {
     // Chunked response filler for the html template
-    
-    size_t len = strlen(altHtml);
+    size_t len = strlen_P(altHtml);
     if (index + maxLen > len) {
         maxLen = len - index;
     }
-    memcpy(buffer, altHtml + index, maxLen);
+    memcpy_P(buffer, altHtml + index, maxLen);
     return maxLen;
 }
 
