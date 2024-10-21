@@ -1,0 +1,106 @@
+<!-- 
+Copyright Production 3000
+
+Licensed under the Apache License, Version 2.0 (the 'License');
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an 'AS IS' BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html lang='de'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Anwendungsbeispiel MVP3000 Framework - CO2-Ampel</title>
+    <link rel='stylesheet' type='text/css' href='styles.css'>
+    <script src='MicroPlot3000.js'></script>
+    <script src='WebSocket3000.js'></script>
+    <script>
+
+window.addEventListener('load', () => {
+    // Graph
+    MicroPlot3000.init('sensordatasscaled');
+    MicroPlot3000.setLabels('Time', 'CO2, ppm');
+
+    // WebSocket
+    WebSocket3000.init('/wssensor',
+        () => {
+            document.getElementById('con').style.backgroundColor = 'green';
+        }, () => {
+            document.getElementById('con').style.backgroundColor = 'red';
+            document.getElementById('d1').innerHTML = '-';
+            document.getElementById('d1').style.color = 'grey';
+            document.getElementById('d1s').innerHTML = '&#129488;';
+            document.getElementById('d2').innerHTML = '-';
+            document.getElementById('d3').innerHTML = '-';
+        }, (e) => {
+            // Graph display
+            MicroPlot3000.appendData(e.data);
+            // Data display
+            s = e.data.split(/[;,]+/);
+            document.getElementById('d1').innerHTML = s[1] + ' ppm';
+            if (s[1] > 1000) {
+                document.getElementById('d1').style.color = 'red';
+                document.getElementById('d1s').innerHTML = '&#128577;';
+            } else if (s[1] > 700) {
+                document.getElementById('d1').style.color = 'orange';
+                document.getElementById('d1s').innerHTML = '&#128528;';
+            } else {
+                document.getElementById('d1').style.color = 'green';
+                document.getElementById('d1s').innerHTML = '&#128578;';
+            };
+            document.getElementById('d2').innerHTML = (s[2] / 10).toFixed(1);
+            document.getElementById('d3').innerHTML = (s[3] / 10).toFixed(1);
+        }
+    );
+
+    document.getElementById('calibrate').addEventListener('click',
+        () => {
+            confirm('Vor der Kalibrierung muss die CO2-Ampel mindestens 5 Minuten im Freien oder direkt am offenen Fenster betrieben werden. Erst danach kann die Kalibrierung zuverlässig durchgeführt werden!') && WebSocket3000.websocket.send('CALIBRATE');
+        }
+    );
+});
+
+    </script>
+</head>
+<body>
+    <div class='container'>
+        <div class='section grid-head'>
+            <h2>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</h2>
+        </div>
+        <div class='section grid-data'>
+            <div id='con'></div>
+            <div class='co2'><span class='smiley' id='d1s'>&#129488;</span> <br> <br> <span id='d1'>-</span></div>
+            <div class='temprh'><span id='d2'>-</span> &deg;C / <span id='d3'>-</span>&percnt;rH
+            </div>
+            <div class='calibrate'><button id='calibrate'>Kalibrierung starten</button></div>
+        </div>
+        <div class='section grid-graph'>
+            <div id='plot'></div>
+        </div>
+        <div class='section grid-bastel'>
+            <a href='https://www.bastelgarage.ch/'><img src='Bastelgarage.png'></a>
+            <p>Die CO2-Ampel wird hergestellt und vertrieben von der Bastelgarage (purecrea GmbH).</p>
+            <p>Weitere Informationen sind auf <a href='https://www.co2ampel.ch' target='_blank'>co2ampel.ch</a> und <a href='https://www.bastelgarage.ch/co2-ampel-mit-smileys-und-balkenanzeige' target='_blank'>bastelgarage.ch</a> zu finden.</p>
+            <p>Die <a href='https://github.com/bastelgarage/co2ampel' target='_blank'>offizielle Firmware</a> ist Open Source und auf GitHub verfügbar.</p>
+        </div>
+        <div class='section grid-mvp'>
+            <a href='https://www.production3000.com/'></a><img src='Production3000.png'></a>
+            <p>Das <a href='https://www.production3000.com/mvp3000/' target='_blank'>MVP3000 Framework</a> ermöglicht die schnelle Entwicklung eines MVP (minimum viable products) zu Demonstrationszwecken.</p>
+            <p>Mehr Informationen zu diesem Anwendungsbeispiel ist auf <a href='https://co2ampel.production3000.com/' target='_blank'>co2ampel.production3000.com</a> zu finden.</p>
+            <p>Der <a href='https://github.com/Production3000/co2ampel' target='_blank'>Quellcode</a> ist ist Open Source und auf GitHub verfügbar.</p>
+        </div>
+    </div>
+    <div class='footer'>
+        Copyright Production 3000
+    </div>
+</body>
+</html>

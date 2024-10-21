@@ -62,8 +62,6 @@ XmoduleSensor xmoduleSensor(valueCount);
 #define LED_PIN D8      // NeoPixels pin
 #define NUMPIXELS 12    // Number of NeoPixels
 
-
-#include <XmoduleLED.h>
 XmoduleLED xmoduleLED(LED_PIN, NUMPIXELS);
 
 
