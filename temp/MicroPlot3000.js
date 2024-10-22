@@ -14,58 +14,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+// The idea to normalize the data for display and use html for the axis is brilliant:
+//  https://dev.to/richharris/a-new-technique-for-making-responsive-javascript-free-charts-gmp
+
+
 MicroPlot3000 = new function() {
     let $ = this;
 
-    $.init = function(urlFolder, selectIndex = 1, domElementId = 'plot') {
+    $.init = function(urlFolder, ylabel, dataIndexY = 1, domElementId = 'plot') {
+        // To be called onLoad
         $.urlFolder = urlFolder;
-        $.selectIndex = selectIndex;
-        $.domElementId = domElementId;
-        // window.addEventListener('load', $.onLoad.bind($));
-        $.onLoad();
-    };
-
-    $.urlFolder;
-    $.domElementName;
-    $.domElement;
-
-    // Data
-    $.data = [];
-    $.selectIndex;
-
-    $.xlabel = '';
-    $.ylabel = '';
-    $.setLabels = function(xlabel, ylabel) {
-        $.xlabel = xlabel;
         $.ylabel = ylabel;
-    };
+        $.dataIndexY = dataIndexY;
 
-    $.onLoad = function() {
         // Append the HTML and CSS to the DOM
-        $.domElement = document.getElementById($.domElementId);
+        $.domElement = document.getElementById(domElementId);
         $.domElement.insertAdjacentHTML('beforeend', $.htmlContent);
-        // Load CSV data
+
+        // Load the data
         (async () => await $.loadData())();
     };
 
-    $.loadData = async function() {
-        let csvString = '';
-        // csvString = '0,0,0;1,111,-11111;2,444,-44444;3,999,-99999;';
-        // csvString = '0.0,0,0;0.1,0.001,-0.0001;0.2,0.004,-0.0004;0.3,0.009,-0.0009;';
+    $.urlFolder;
+    $.ylabel = '';
+    $.dataIndexY;
+    
+    $.domElement;
 
+    $.data = [];
+
+    $.loadData = async function() {
         try {
             const url = `http://${location.host}/${$.urlFolder}`;
             const response = await fetch(url);
-            if (!response.ok) {
+            if (!response.ok)
                 throw new Error(`Response status: ${response.status}`);
-            }
 
-            csvString = await response.text();
+            let csvString = await response.text();
+            $.appendData(csvString);
+
         } catch (error) {
             console.error(error.message);
         }
-
-        $.appendData(csvString);
     };
 
     $.appendData = function(csvString) {
@@ -78,18 +69,14 @@ MicroPlot3000 = new function() {
         csvString.split(';').forEach(row => {
             let values = row.split(',').map(Number);
             let x = values[0];
-            let y = values[$.selectIndex];
-            // return {x, y};
+            let y = values[$.dataIndexY];
             $.data.push({x, y});
-        }) ;
+        });
 
         $.plotData();
     };
 
     $.plotData = function() {
-        // The idea to normalize the data for display and use html for the axis is brilliant:
-        //  https://dev.to/richharris/a-new-technique-for-making-responsive-javascript-free-charts-gmp
-
         // Find the max/min x/y values
         let xMax = Math.max(...$.data.map(d => d.x));
         let xMin = Math.min(...$.data.map(d => d.x));
@@ -101,35 +88,53 @@ MicroPlot3000 = new function() {
             return {
                 x: (d.x - xMin) / (xMax - xMin) * 100,
                 y: 100 - (d.y - yMin) / (yMax - yMin) * 100
-            };
+            }
         });
 
         // Update the polyline points
         $.domElement.querySelector('polyline').setAttribute('points', dataScaled.map(d => `${d.x},${d.y}`).join(' '));
 
-        // Get the order of magnitude for data labeling 
-        let magnitudeX = Math.log10(Math.abs(xMax - xMin)) | 0;
-        let magnitudeY = Math.log10(Math.abs(yMax - yMin)) | 0;
-        // Precision is 2 - magnitude, but needs to be 0 or larger
-        let precisionX = Math.max(0, 1 - magnitudeX);
-        let precisionY = Math.max(0, 1 - magnitudeY);
-        if (magnitudeX < 0) precisionX++;
-        if (magnitudeY < 0) precisionY++;
+        // Update the time axis label
+        let timeDiff = xMax - xMin;
+        let dtStart = new Date(xMin);
 
-        // Very crude way to make sure the axis labels are readable
-        let xlabel = $.xlabel;
+        // Update the time axis ticks depending on the time span
+        let unitString = '';
+        $.domElement.querySelectorAll('.xaxis span').forEach((span, i) => {
+            let number = xMin + (xMax - xMin) / 5 * i;
+            let dt = new Date(number);
+            if (timeDiff < 10*60*1000) {
+                // < 10 m -> tick: m:ss
+                span.textContent = `${dt.getUTCMinutes()}:${dt.getUTCSeconds().toString().padStart(2, '0')}`;
+                unitString = '[m:ss]';
+            } else if (timeDiff < 10*60*60*1000) {
+                // < 10 h -> tick: h:mm
+                span.textContent = `${dt.getUTCHours()}:${dt.getUTCMinutes().toString().padStart(2, '0')}`;
+                unitString = '[h:mm]';
+            } else if (timeDiff < 10*24*60*60*1000) {
+                // < 10 d -> tick: d hh
+                span.textContent = `${dt.getUTCDate()} ${dt.getUTCHours().toString().padStart(2, '0')}h`;
+                unitString = '[d hh]h';
+            } else if (timeDiff < 10*30*24*60*60*1000) {
+                // < 10 M -> tick: yyyy-MM
+                span.textContent = `${(dt.getUTCMonth() + 1)}-${dt.getUTCDate().toString().padStart(2, '0')}`;
+                unitString = '[MM-dd]';
+            } else {
+                // tick: yyyy-MM-dd
+                span.textContent = `${dt.getUTCFullYear()}-${(dt.getUTCMonth() + 1).toString().padStart(2, '0')}-${dt.getUTCDate().toString().padStart(2, '0')}`;
+                unitString = '[yyyy-MM-dd]';
+            }
+        });
+        $.domElement.querySelector('.xaxis div').textContent = `starting UTC ${dtStart.getFullYear()}-${(dtStart.getUTCMonth() + 1).toString().padStart(2, '0')}-${dtStart.getUTCDate().toString().padStart(2, '0')} ${dtStart.getUTCHours().toString().padStart(2, '0')}:${dtStart.getUTCMinutes().toString().padStart(2, '0')}:${dtStart.getUTCSeconds().toString().padStart(2, '0')} with units ${unitString}`;
+
+        // Get the order of magnitude for y axis labeling 
+        let magnitudeY = Math.log10(Math.abs(yMax - yMin)) | 0;
+        let precisionY = Math.max(0, 1 - magnitudeY); // Cannot be < 0
+        if (magnitudeY < 0)
+            precisionY++;
+
+        // Very crude way to make sure the y axis ticks are readable
         let ylabel = $.ylabel;
-        if (magnitudeX > 3) {
-            xMin = xMin / 1000;
-            xMax = xMax / 1000;
-            xlabel += ' (E+3)';
-        }
-        if (magnitudeX < 0) {
-            xMin = xMin * 1000;
-            xMax = xMax * 1000;
-            precisionX -= 3;
-            xlabel += ' (E-3)';
-        }
         if (magnitudeY > 3) {
             yMin = yMin / 1000;
             yMax = yMax / 1000;
@@ -141,14 +146,8 @@ MicroPlot3000 = new function() {
             precisionY -= 3;
             ylabel += ' (E-3)';
         }
-        $.domElement.querySelector('.xaxis div').textContent = xlabel;
         $.domElement.querySelector('.yaxis div div').textContent = ylabel;
 
-        // Assign values to the x axis using the min/max values
-        $.domElement.querySelectorAll('.xaxis span').forEach((span, i) => {
-            let number = xMin + (xMax - xMin) / 5 * i;
-            span.textContent = number.toFixed(precisionX);
-        });
         // Assign values to the y axis using the min/max values
         $.domElement.querySelectorAll('.yaxis span').forEach((span, i) => {
             let number = yMin + (yMax - yMin) / 5 * i;
@@ -164,8 +163,9 @@ MicroPlot3000 = new function() {
         position: relative;
         width: 100%;
         height: 100%;
-        padding-left: 3.5em;
         padding-bottom: 2em;
+        padding-left: 3.5em;
+        padding-right: 0.5em;
         box-sizing: border-box;
     }
 
@@ -227,7 +227,7 @@ MicroPlot3000 = new function() {
     .yaxis > div {
         position: absolute;
         height: 100%;
-        transform: translate(-4.5em, 50%) rotate(-90deg);
+        transform: translate(-5em, 50%) rotate(-90deg);
         transform-origin: top;
     }
 

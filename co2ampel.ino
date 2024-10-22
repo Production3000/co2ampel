@@ -88,6 +88,7 @@ void setup() {
     // Init the sensor module and add it to the mvp framework
     xmoduleSensor.setSensorInfo(infoName, infoDescription, sensorTypes, sensorUnits);
     xmoduleSensor.setSampleAveraging(1); // The SCD30 has already averaged data ready every 1.5 s. Averaging in the framework can be set to a low value.
+    xmoduleSensor.setReportingThreshold(50, 0); // 50 permille change, only the first value
     xmoduleSensor.setSampleToIntExponent(exponent);
     xmoduleSensor.setNetworkCtrlCallback(networkCtrlCallback);
     mvp.addXmodule(&xmoduleSensor);
@@ -145,6 +146,7 @@ void setup() {
     sdc30.setAltitudeCompensation(siteAltitude);
 }
 
+bool isBlinking = false;
 void loop() {
     // Do the work
     mvp.loop();
@@ -160,19 +162,19 @@ void loop() {
             if (operatingState == OperatingState::MEASURE) {
                 // Add data to the sensor module
                 // The first CO2 measurement is always 0, probably some running median thing
-                if (data[0] > atmosphericCO2 - 100) { 
+                if (data[0] > atmosphericCO2 - 100) {
                     xmoduleSensor.addSample(data);
-                    uint8_t brightness[NUMPIXELS] = {0};
-                    onDemandSetter(brightness);
-                    xmoduleLED.setFixedBrightnessIndividual(brightness);
-
-                    // Blink faster if CO2 is high
-                    // uint16_t interval = constrain(2300 - (uint16_t)data[0], 100, 2300);
-
-                    // TODO blink effect - needs to turn off again if CO2 goes below threshold
-                    // Blink faster if CO2 is high
-                    // xmoduleLED.setBrightnessEffect(constrain(2300 - (uint16_t)data[0], 100, 2300), XledFx::BRIGHTNESSFX::BLINK);
-
+                    if (data[0] < 1500) {
+                        isBlinking = false;
+                        uint8_t brightness[NUMPIXELS] = {0};
+                        onDemandSetter(brightness);
+                        xmoduleLED.setFixedBrightnessIndividual(brightness);
+                    } else {
+                        if (!isBlinking) {
+                            isBlinking = true;
+                            xmoduleLED.setBrightnessEffect(1000, XledFx::BRIGHTNESSFX::PULSE_FULL);
+                        }
+                    }
                 }
             }
             if (operatingState == OperatingState::CALIBRATE) {
@@ -212,8 +214,8 @@ void networkCtrlCallback(const String& data) {
 
 void calibrateSensor() {
     // Data sheet states 2 minutes for the sensor. Could be more with housing.
-    if (millis() < 5*60*1000) {
-        mvp.log("Calibration not started. The device needs to be OPERATING at FRESH air for AT LEAST 5 minutes before calibration!");
+    if (millis() < 3*60*1000) {
+        mvp.log("Calibration not started. The device needs to be OPERATING at FRESH air for AT LEAST 3 minutes before calibration!");
         return;
     }
 
@@ -257,8 +259,8 @@ void onDemandSetter(uint8_t* brightness) {
 
     // LED smileys
     switch ((uint16_t)data[0]) {
-        case 1300 ... 65535: // r + blink
-        case 1150 ... 1299: // r
+        case 1500 ... 65535: // r + blink
+        case 1150 ... 1499: // r
         case 1000 ... 1149:
             brightness[0] = 255;
             brightness[1] = 255;

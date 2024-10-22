@@ -27,8 +27,7 @@ limitations under the License.
 
 window.addEventListener('load', () => {
     // Graph
-    MicroPlot3000.init('sensordatasscaled');
-    MicroPlot3000.setLabels('Time', 'CO2, ppm');
+    MicroPlot3000.init('sensordatasscaled','CO2 [ppm]');
 
     // WebSocket
     WebSocket3000.init('/wssensor',
@@ -62,9 +61,10 @@ window.addEventListener('load', () => {
         }
     );
 
+    // Calibration button
     document.getElementById('calibrate').addEventListener('click',
         () => {
-            confirm('Vor der Kalibrierung muss die CO2-Ampel mindestens 5 Minuten im Freien oder direkt am offenen Fenster betrieben werden. Erst danach kann die Kalibrierung zuverlässig durchgeführt werden!') && WebSocket3000.websocket.send('CALIBRATE');
+            confirm('Vor der Kalibrierung muss die CO2-Ampel mindestens drei Minuten im Freien (nicht am offenen Fenster) betrieben werden. Erst danach kann die Kalibrierung zuverlässig durchgeführt werden!') && WebSocket3000.websocket.send('CALIBRATE');
         }
     );
 });
@@ -74,7 +74,7 @@ window.addEventListener('load', () => {
 <body>
     <div class='container'>
         <div class='section grid-head'>
-            <h2>CO2-Ampel - Anwendungsbeispiel des MVP3000 Frameworks</h2>
+            <h2>Anwendungsbeispiel MVP3000 Framework - CO2-Ampel</h2>
         </div>
         <div class='section grid-data'>
             <div id='con'></div>
