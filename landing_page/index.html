@@ -30,6 +30,7 @@ window.addEventListener('load', () => {
     MicroPlot3000.init('sensordatasscaled','CO2 [ppm]');
 
     // WebSocket
+    let skipFirst = true;
     WebSocket3000.init('/wssensor',
         () => {
             document.getElementById('con').style.backgroundColor = 'green';
@@ -41,8 +42,6 @@ window.addEventListener('load', () => {
             document.getElementById('d2').innerHTML = '-';
             document.getElementById('d3').innerHTML = '-';
         }, (e) => {
-            // Graph display
-            MicroPlot3000.appendData(e.data);
             // Data display
             s = e.data.split(/[;,]+/);
             document.getElementById('d1').innerHTML = s[1] + ' ppm';
@@ -58,6 +57,13 @@ window.addEventListener('load', () => {
             };
             document.getElementById('d2').innerHTML = (s[2] / 10).toFixed(1);
             document.getElementById('d3').innerHTML = (s[3] / 10).toFixed(1);
+
+            // Graph display, skip first websocket message which is sent on connect with duplicate data and messes up the graph
+            if (skipFirst) {
+                skipFirst = false;
+                return;
+            }
+            MicroPlot3000.appendData(e.data);
         }
     );
 
