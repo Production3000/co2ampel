@@ -14,22 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-#include <MVP3000.h>
-#include <XmoduleLED/XmoduleLED.h>
-#include <XmoduleSensor/XmoduleSensor.h>
-extern MVP3000 mvp;
+/// Sensor specific code /////////////////////////////////////////////////////////////
 
 // Sensirion I2C SCD30 https://github.com/Sensirion/arduino-i2c-scd30
-// This is a very nice library that returns actually usefull error codes, which we mostly ignore here.
 #include <SensirionI2cScd30.h>
 #include <Wire.h>
 SensirionI2cScd30 sdc30;
 
 uint16_t atmosphericCO2 = 419; // ppm
+uint16_t measurementInterval = 2; // s
 uint16_t siteAltitude = 450; // m
 uint16_t temperatureCompensation = 350; // °C*100
 
+// Sensor data is: CO2, T, rH
+const uint8_t valueCount = 3;
+
+
+/// MVP3000 Framwork and Modules /////////////////////////////////////////////////
+#include <MVP3000.h>
+extern MVP3000 mvp;
+
+// State machine
 enum OperatingState: uint8_t {
     ERROR = 0,
     MEASURE = 1,
@@ -38,7 +43,8 @@ enum OperatingState: uint8_t {
 uint8_t calibrationCounter = 0;
 
 
-const uint8_t valueCount = 3;
+/// Sensor module ////////////////////////////////////////////////////////////////
+#include <XmoduleSensor/XmoduleSensor.h>
 
 // Add a description of the sensor for the web interface
 String infoName = "Sensirion SDC30";
@@ -59,38 +65,37 @@ int8_t exponent[valueCount] = {0, 1, 1};
 XmoduleSensor xmoduleSensor(valueCount);
 
 
-#include <Adafruit_NeoPixel.h>
-// NeoPixels
-#define LED_PIN D8      // NeoPixels pin
-#define NUMPIXELS 12    // Number of NeoPixels
+/// LED module ////////////////////////////////////////////////////////////////
+#include <XmoduleLED/XmoduleLED.h>
 
-XmoduleLED xmoduleLED(LED_PIN, NUMPIXELS);
+const uint8_t ledPin = D8; // NeoPixels pin
+const uint8_t ledCount = 12; // Number of NeoPixels
 
+XmoduleLED xmoduleLED(ledPin, ledCount);
 
-uint32_t standardColors[NUMPIXELS] = {
-    // LED smileys
-    Adafruit_NeoPixel::Color(255, 0, 0),
-    Adafruit_NeoPixel::Color(255, 0, 0),
-    Adafruit_NeoPixel::Color(255, 255, 0),
-    Adafruit_NeoPixel::Color(255, 255, 0),
-    Adafruit_NeoPixel::Color(0, 255, 0),
-    Adafruit_NeoPixel::Color(0, 255, 0),
-    // LED bars
-    Adafruit_NeoPixel::Color(0, 255, 0),
-    Adafruit_NeoPixel::Color(0, 255, 0),
-    Adafruit_NeoPixel::Color(255, 255, 0),
-    Adafruit_NeoPixel::Color(255, 255, 0),
-    Adafruit_NeoPixel::Color(255, 0, 0),
-    Adafruit_NeoPixel::Color(255, 0, 0)
+uint32_t standardColors[ledCount] = {
+    // LED smileys: red, yellow, green
+    ColorRGB(255, 0, 0),
+    ColorRGB(255, 0, 0),
+    ColorRGB(255, 255, 0),
+    ColorRGB(255, 255, 0),
+    ColorRGB(0, 255, 0),
+    ColorRGB(0, 255, 0),
+    // LED bars: red, yellow, green
+    ColorRGB(0, 255, 0),
+    ColorRGB(0, 255, 0),
+    ColorRGB(255, 255, 0),
+    ColorRGB(255, 255, 0),
+    ColorRGB(255, 0, 0),
+    ColorRGB(255, 0, 0)
 };
-
 
 
 void setup() {
     // Init the sensor module and add it to the mvp framework
     xmoduleSensor.setSensorInfo(infoName, infoDescription, sensorTypes, sensorUnits);
     xmoduleSensor.setSampleAveraging(1); // The SCD30 has already averaged data ready every 1.5 s. Averaging in the framework can be set to a low value.
-    xmoduleSensor.setReportingThreshold(50, 0); // 50 permille change, only the first value
+    xmoduleSensor.setReportingThreshold(5, 0); // Recording threshold change of 0.5 percent of the CO2 value
     xmoduleSensor.setSampleToIntExponent(exponent);
     xmoduleSensor.setNetworkCtrlCallback(networkCtrlCallback);
     mvp.addXmodule(&xmoduleSensor);
@@ -117,7 +122,7 @@ void setup() {
     int16_t sdcError = sdc30.softReset(); // Blocking 2000 ms
     if (sdcError != NO_ERROR) {
         operatingState = OperatingState::ERROR;
-        xmoduleLED.setFixedColorSync(Adafruit_NeoPixel::Color(255, 0, 0));
+        xmoduleLED.setFixedColorSync(ColorRGB(255, 0, 0));
         static char errorMessage[128];
         errorToString(sdcError, errorMessage, sizeof errorMessage);
         mvp.logFormatted("Error starting sensor: %s", errorMessage);
@@ -125,21 +130,26 @@ void setup() {
     }
 
     operatingState = OperatingState::MEASURE;
+    sdc30.setMeasurementInterval(measurementInterval);
+    sdc30.setAltitudeCompensation(siteAltitude);
     sdc30.setTemperatureOffset(temperatureCompensation);
 
     // Get and print sensor information
     uint8_t major = 0;
     uint8_t minor = 0;
     sdc30.readFirmwareVersion(major, minor);
+    uint16_t interval;
+    sdc30.getMeasurementInterval(interval);
     uint16_t altitude;
     sdc30.getAltitudeCompensation(altitude);
     uint16_t temperatureOffset;
     sdc30.getTemperatureOffset(temperatureOffset);
     // uint16_t co2RefConcentration;
     // sdc30.getForceRecalibrationStatus(co2RefConcentration); // This always returns 400 after softReset/power cycle. However, the sensor still uses the updated calibration curve.
+
     uint16_t isActive;
     sdc30.getAutoCalibrationStatus(isActive);
-    mvp.logFormatted("SDC30: Firmware version %d.%d, altitude %d m, temp offset %d C, auto calibration %s", major, minor, altitude, temperatureOffset, (isActive) ? "active" : "disabled");
+    mvp.logFormatted("SDC30: Firmware version %d.%d, interval %d s, altitude %d m, temp offset %d C, auto calibration %s", major, minor, interval, altitude, temperatureOffset, (isActive) ? "active" : "disabled");
 
     // Start periodic measurement
     // This is ambiguous in the library: "Setting the ambient pressure will overwrite previous settings of altitude compensation. Setting the argument to zero will deactivate the ambient pressure compensation."
@@ -168,8 +178,8 @@ void loop() {
                     xmoduleSensor.addSample(data);
                     if (data[0] < 1500) {
                         isBlinking = false;
-                        uint8_t brightness[NUMPIXELS] = {0};
-                        onDemandSetter(brightness);
+                        uint8_t brightness[ledCount] = {0};
+                        calcLedBrightness(brightness);
                         xmoduleLED.setFixedBrightnessIndividual(brightness);
                     } else {
                         if (!isBlinking) {
@@ -226,21 +236,21 @@ void calibrateSensor() {
     int16_t sdcError = sdc30.forceRecalibration(atmosphericCO2); // Blocking 10 ms
     if (sdcError != NO_ERROR) {
         operatingState = OperatingState::ERROR;
-        xmoduleLED.setFixedColorSync(Adafruit_NeoPixel::Color(255, 0, 0));
+        xmoduleLED.setFixedColorSync(ColorRGB(255, 0, 0));
         static char errorMessage[128];
         errorToString(sdcError, errorMessage, sizeof errorMessage);
         mvp.logFormatted("Error during calibration: %s", errorMessage);
     } else {
         operatingState = OperatingState::CALIBRATE;
     calibrationCounter = 0;
-        xmoduleLED.setFixedColorSync(Adafruit_NeoPixel::Color(0, 0, 255));
+        xmoduleLED.setFixedColorSync(ColorRGB(0, 0, 255));
         xmoduleLED.setBrightnessEffect(1000, XledFx::BRIGHTNESSFX::PULSE_FULL);
         mvp.logFormatted("Calibration to %d ppm initiated. Restarting measurement ...", atmosphericCO2);
     }
 }
 
 
-void onDemandSetter(uint8_t* brightness) {
+void calcLedBrightness(uint8_t* brightness) {
     // LED bars
     switch ((uint16_t)data[0]) {
         case 1150 ... 65535: // ggyyrr

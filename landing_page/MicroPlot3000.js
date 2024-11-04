@@ -209,6 +209,7 @@ MicroPlot3000 = new function() {
         left: calc(var(--index)*20%);
         top: 0.5em;
         transform: translate(-50%,0);
+        white-space: nowrap;
     }
 
     .yaxis > span {
@@ -217,6 +218,7 @@ MicroPlot3000 = new function() {
         left: -0.5em;
         top: calc(100% - var(--index)*20%);
         transform: translate(-100%,-50%);
+        white-space: nowrap;
     }
 
     /* Labels */
